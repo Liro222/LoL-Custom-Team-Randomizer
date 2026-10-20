@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5v5 Custom Rift – Team-Auslosung</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #131a2c;
+      --panel: #1c263c;
+      --panel-soft: #263249;
+      --text: #f6f7ff;
+      --muted: #a7b5ce;
+      --blue: #6286f7;
+      --cyan: #6ecfdb;
+      --red: #ec718e;
+      --yellow: #f6bb55;
+      --line: #33415b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: radial-gradient(ellipse 70% 85% at 70% 43%, #1c2943 0%, #141b2e 62%, #111726 100%);
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { max-width: 1700px; padding: 38px 24px 32px; margin: 0 auto; }
+    .layout {
+      display: grid;
+      grid-template-columns: 230px minmax(275px, 1fr) 86px minmax(275px, 1fr) 210px;
+      align-items: center;
+      gap: 24px;
+      min-height: 675px;
+    }
+    .sidebar { align-self: stretch; display: flex; flex-direction: column; }
+    h1 { font-size: 29px; line-height: 1.12; margin: 3px 0 24px; letter-spacing: -.9px; }
+    h1 span { display: block; }
+    h2 { margin: 0; font-size: 19px; }
+    .add-form { display: grid; gap: 9px; }
+    .player-input {
+      background: #29344b;
+      color: #fff;
+      padding: 11px 12px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      outline: none;
+      width: 100%;
+    }
+    .player-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #6286f720; }
+    .player-input::placeholder { color: #a4aec5; }
+    .gradient-btn {
+      color: #111827;
+      font-weight: 800;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: linear-gradient(110deg, var(--blue), var(--cyan));
+      transition: filter .16s, transform .16s;
+    }
+    .gradient-btn:hover { filter: brightness(1.13); }
+    .gradient-btn:active { transform: translateY(1px); }
+    .gradient-btn.warm { background: linear-gradient(110deg, #e68380, #f5ca56); }
+    .section-head { margin-top: 27px; display: flex; justify-content: space-between; align-items: center; gap: 5px; }
+    .count { color: var(--muted); font-weight: 650; }
+    .player-list { display: grid; gap: 7px; margin-top: 12px; }
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 38px;
+      padding: 5px 7px 5px 10px;
+      border-radius: 7px;
+      background: #29344d;
+    }
+    .player-name { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; }
+    .team-lock {
+      width: 22px;
+      height: 22px;
+      flex: none;
+      border: 2px solid transparent;
+      border-radius: 50%;
+      opacity: .4;
+      transition: opacity .15s, transform .15s, box-shadow .15s;
+    }
+    .team-lock:hover { opacity: .9; transform: scale(1.08); }
+    .team-lock.active { opacity: 1; border-color: #fff9; box-shadow: 0 0 0 2px #ffffff24; }
+    .team-lock.blue { background: linear-gradient(120deg, #577df0, #64bbef); }
+    .team-lock.red { background: linear-gradient(120deg, #e65d7a, #ec9a91); }
+    .remove-btn {
+      border: 0;
+      width: 23px;
+      height: 23px;
+      border-radius: 50%;
+      font-weight: 800;
+      color: #fff;
+      background: #527ec5;
+      line-height: 1;
+      flex: none;
+    }
+    .remove-btn:hover { background: #df637c; }
+    .hint { color: var(--muted); font-size: 12px; margin: 9px 0 14px; }
+    .sidebar-actions { margin-top: auto; display: grid; gap: 9px; padding-top: 30px; }
+    .text-btn {
+      padding: 6px; background: none; border: 0; color: var(--muted); text-decoration: underline;
+      text-underline-offset: 3px; font-size: 13px;
+    }
+    .text-btn:hover { color: #fff; }
+    .team-panel {
+      height: 540px;
+      padding: 27px 21px;
+      background: linear-gradient(160deg, #202a40e6, #1c2639ef);
+      border-radius: 15px;
+      border: 1px solid #ffffff07;
+    }
+    .team-panel h2 { text-align: center; font-size: 23px; margin: 4px 0 26px; }
+    .team-panel.blue { box-shadow: inset 0 3px 0 #6286f73d; }
+    .team-panel.red { box-shadow: inset 0 3px 0 #ed6d8e32; }
+    .role-list { display: grid; gap: 12px; }
+    .role-slot { display: grid; grid-template-columns: 75px 1fr; gap: 10px; align-items: center; min-height: 54px; border-radius: 9px; background: #ffffff07; padding: 9px 12px; }
+    .role-label { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 800; letter-spacing: .6px; }
+    .role-player { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+    .role-player.empty { color: #697790; font-size: 14px; font-weight: 400; }
+    .versus {
+      text-align: center;
+      font-size: clamp(42px, 4vw, 67px);
+      font-weight: 900;
+      letter-spacing: -5px;
+      background: linear-gradient(120deg, #6588fa, #e87186);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      user-select: none;
+    }
+    .output { align-self: center; }
+    .output h2 { font-size: 17px; margin-bottom: 9px; }
+    .output-box {
+      padding: 12px;
+      min-height: 166px;
+      background: #101727;
+      border: 1px solid #303e58;
+      border-radius: 9px;
+      font: 12px/1.6 Consolas, "Courier New", monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: #e1e5f4;
+    }
+    .copy-btn { margin-top: 10px; width: 100%; }
+    .status { min-height: 22px; color: #f8c78b; font-size: 13px; margin-top: 11px; }
+    .footnote { color: var(--muted); margin: 22px 0 0; font-size: 12px; }
+    @media (max-width: 1370px) {
+      .layout { grid-template-columns: 230px minmax(275px,1fr) 72px minmax(275px,1fr); }
+      .output { grid-column: 2 / 5; width: min(620px, 100%); justify-self: center; margin-top: -4px; }
+      .layout { align-items: center; }
+    }
+    @media (max-width: 930px) {
+      .layout { grid-template-columns: 220px minmax(0,1fr) 58px minmax(0,1fr); gap: 12px; }
+      .team-panel { padding: 20px 12px; }
+      .role-slot { grid-template-columns: 1fr; gap: 2px; }
+    }
+    @media (max-width: 720px) {
+      .app { padding: 23px 15px; }
+      .layout { grid-template-columns: 1fr 1fr; gap: 12px; min-height: 0; }
+      .sidebar { grid-column: 1 / -1; }
+      .player-list { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+      .sidebar-actions { margin-top: 0; }
+      .team-panel { height: auto; min-height: 470px; }
+      .team-panel.blue { grid-column: 1; }
+      .team-panel.red { grid-column: 2; }
+      .team-panel h2 { font-size: 20px; }
+      .versus { grid-row: 3; grid-column: 1 / -1; font-size: 40px; }
+      .output { grid-column: 1 / -1; width: 100%; }
+    }
+    @media (max-width: 420px) {
+      .team-panel { padding: 14px 8px; }
+      .role-slot { padding: 8px; }
+      .role-player { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="layout">
+      <aside class="sidebar">
+        <h1><span>5v5 Custom</span><span>Rift</span></h1>
+        <form id="add-form" class="add-form">
+          <input id="name-input" class="player-input" maxlength="28" placeholder="Spielername eingeben" autocomplete="off" aria-label="Spielername" required />
+          <button class="gradient-btn" type="submit">Spieler hinzufügen</button>
+        </form>
+        <div class="section-head"><strong>Spielerliste</strong><span id="count" class="count">0/10</span></div>
+        <div id="player-list" class="player-list" aria-live="polite"></div>
+        <p class="hint">Die farbigen Punkte fixieren Spieler optional auf Blue oder Red Side. Nochmal klicken hebt die Fixierung auf.</p>
+        <div class="sidebar-actions">
+          <button id="shuffle-btn" class="gradient-btn">Let it Rift</button>
+          <button id="reset-btn" class="gradient-btn warm">Teams zurücksetzen</button>
+          <button id="demo-btn" class="text-btn">10 Beispielspieler eintragen</button>
+          <button id="clear-btn" class="text-btn">Spielerliste löschen</button>
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+        </div>
+      </aside>
+
+      <section id="blue-panel" class="team-panel blue" aria-label="Blue Side">
+        <h2>Blue Side</h2>
+        <div id="blue-roles" class="role-list"></div>
+      </section>
+      <div class="versus" aria-hidden="true">VS.</div>
+      <section id="red-panel" class="team-panel red" aria-label="Red Side">
+        <h2>Red Side</h2>
+        <div id="red-roles" class="role-list"></div>
+      </section>
+      <section class="output">
+        <h2>Teamliste zum Kopieren</h2>
+        <div id="output-box" class="output-box" aria-live="polite"></div>
+        <button id="copy-btn" class="gradient-btn copy-btn" type="button">Teams kopieren</button>
+      </section>
+    </div>
+    <p class="footnote">Läuft lokal im Browser. Die Teams werden ausgelost, aber nicht automatisch im League-of-Legends-Client angelegt. Spieler und Fixierungen werden im Browser gespeichert.</p>
+  </main>
+
+  <script>
+    // Reihenfolge der Slots pro Team
+    const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
+    const STORAGE_KEY = 'custom-rift-players-v1';
+    const $ = (id) => document.getElementById(id);
+    let players = loadPlayers();
+    let result = null;
+
+    function loadPlayers() {
+      try {
+        const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (!Array.isArray(value)) return [];
+        return value.slice(0, 10)
+          .filter(p => p && typeof p.name === 'string')
+          .map(p => ({ name: p.name.slice(0, 28), lock: ['blue', 'red'].includes(p.lock) ? p.lock : null }));
+      } catch { return []; }
+    }
+
+    function savePlayers() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(players)); } catch { /* private browser mode */ }
+    }
+
+    function message(text = '') { $('status').textContent = text; }
+
+    function renderPlayers() {
+      $('count').textContent = `${players.length}/10`;
+      const container = $('player-list');
+      container.replaceChildren();
+      for (const [index, player] of players.entries()) {
+        const row = document.createElement('div');
+        row.className = 'player-row';
+        const name = document.createElement('span');
+        name.className = 'player-name';
+        name.textContent = player.name; // keine HTML-Einschleusung durch Benutzernamen
+        name.title = player.name;
+        row.append(name);
+
+        for (const side of ['blue', 'red']) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = `team-lock ${side} ${player.lock === side ? 'active' : ''}`;
+          b.title = player.lock === side ? `${side} Side freigeben` : `Auf ${side} Side fixieren`;
+          b.setAttribute('aria-label', `${player.name}: ${side} Side umschalten`);
+          b.setAttribute('aria-pressed', String(player.lock === side));
+          b.onclick = () => {
+            players[index].lock = players[index].lock === side ? null : side;
+            savePlayers(); renderPlayers(); clearTeams(); message();
+          };
+          row.append(b);
+        }
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'remove-btn';
+        remove.textContent = '×';
+        remove.title = `${player.name} entfernen`;
+        remove.setAttribute('aria-label', `${player.name} entfernen`);
+        remove.onclick = () => {
+          players.splice(index, 1);
+          savePlayers(); renderPlayers(); clearTeams(); message();
+        };
+        row.append(remove);
+        container.append(row);
+      }
+    }
+
+    function renderRoles(side, names = []) {
+      const container = $(`${side}-roles`);
+      container.replaceChildren();
+      ROLES.forEach((role, index) => {
+        const row = document.createElement('div');
+        row.className = 'role-slot';
+        const roleLabel = document.createElement('span');
+        roleLabel.className = 'role-label';
+        roleLabel.textContent = role;
+        const name = document.createElement('span');
+        name.className = `role-player ${names[index] ? '' : 'empty'}`;
+        name.textContent = names[index] || '—';
+        row.append(roleLabel, name);
+        container.append(row);
+      });
+    }
+
+    function formatTeams() {
+      if (!result) return 'Noch keine Teams ausgelost.';
+      return ['BLUE', 'RED'].map((side) => {
+        const team = result[side.toLowerCase()];
+        return ROLES.map((role, i) => `${side}, ${role}: ${team[i]}`).join('\n');
+      }).join('\n\n');
+    }
+
+    function renderTeams() {
+      renderRoles('blue', result ? result.blue : []);
+      renderRoles('red', result ? result.red : []);
+      $('output-box').textContent = formatTeams();
+    }
+
+    function clearTeams() { result = null; renderTeams(); }
+
+    // Fisher–Yates: mischt ein Array gleichverteilt per Zufall.
+    function shuffle(input) {
+      const output = [...input];
+      for (let i = output.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [output[i], output[j]] = [output[j], output[i]];
+      }
+      return output;
+    }
+
+    function drawTeams() {
+      if (players.length !== 10) {
+        message(`Bitte genau 10 Spieler hinzufügen (aktuell ${players.length}).`);
+        return;
+      }
+      const blue = players.filter(p => p.lock === 'blue').map(p => p.name);
+      const red = players.filter(p => p.lock === 'red').map(p => p.name);
+      if (blue.length > 5 || red.length > 5) {
+        message('Maximal 5 Spieler dürfen pro Team fixiert sein.');
+        return;
+      }
+      const free = shuffle(players.filter(p => !p.lock).map(p => p.name));
+      blue.push(...free.splice(0, 5 - blue.length));
+      red.push(...free);
+      result = { blue: shuffle(blue), red: shuffle(red) };
+      renderTeams();
+      message('Teams und Rollen erfolgreich ausgelost!');
+    }
+
+    $('add-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = $('name-input');
+      const name = input.value.trim();
+      if (!name) return;
+      if (players.length >= 10) { message('Es sind bereits 10 Spieler eingetragen.'); return; }
+      if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        message('Dieser Spielername ist schon in der Liste.'); return;
+      }
+      players.push({ name, lock: null });
+      input.value = '';
+      input.focus();
+      savePlayers(); renderPlayers(); clearTeams(); message();
+    });
+
+    $('shuffle-btn').onclick = drawTeams;
+    $('reset-btn').onclick = () => { clearTeams(); message('Teams zurückgesetzt. Spieler bleiben erhalten.'); };
+    $('clear-btn').onclick = () => {
+      players = []; savePlayers(); renderPlayers(); clearTeams(); message('Spielerliste geleert.');
+    };
+    $('demo-btn').onclick = () => {
+      players = ['weber', 'domy', 'klaualles', 'pooli', 'steal', 'ugly', 'weak', 'zuck', 'logo', 'flo']
+        .map(name => ({ name, lock: null }));
+      savePlayers(); renderPlayers(); clearTeams(); message('Beispielspieler eingetragen.');
+    };
+    $('copy-btn').onclick = async () => {
+      if (!result) { message('Zuerst Teams auslosen.'); return; }
+      const text = formatTeams();
+      try {
+        if (!navigator.clipboard?.writeText) throw Error('Clipboard nicht verfügbar');
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // Fallback für manche Browser, wenn die Datei über file:// geöffnet wird.
+        const helper = document.createElement('textarea');
+        helper.value = text;
+        helper.style.position = 'fixed';
+        helper.style.opacity = '0';
+        document.body.append(helper);
+        helper.select();
+        const success = document.execCommand('copy');
+        helper.remove();
+        if (!success) { message('Kopieren fehlgeschlagen. Bitte Text manuell markieren.'); return; }
+      }
+      message('Teamliste in die Zwischenablage kopiert.');
+    };
+
+    renderPlayers();
+    renderTeams();
+  </script>
+</body>
+</html>
